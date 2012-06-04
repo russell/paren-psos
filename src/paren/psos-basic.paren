@@ -6,7 +6,7 @@
 	(setf sclass.direct-subclasses (array subclass)))))
 
 (defun ensure-class (name direct-superclasses)
-  (return (create-class.apply nil arguments)))
+  (create-class.apply nil arguments))
 
 (defun ensure-class-superclasses (class-function direct-superclasses)
   (setf direct-superclasses
@@ -24,7 +24,7 @@
 
 ; this isn't pretty but it works
 (defun remove-duplicates (in-arr equality-lambda)
-  (defaultf equality-lambda (lambda (ob1 ob2) (return (=== ob1 ob2))))
+  (defaultf equality-lambda (lambda (ob1 ob2) (=== ob1 ob2)))
   (let ((working-array in-arr)
 	(out-arr (array)))
     (while t
@@ -35,24 +35,24 @@
 	    (setf working-array 
 		  (working-array.filter 
 		   (lambda (test-item)
-		     (return (not (equality-lambda test-item latest-unique-item)))))))))
-    (return out-arr)))
+		     (not (equality-lambda test-item latest-unique-item))))))))
+    out-arr))
 
 (defun sort-class-precedence-list (class-list)
-  (return class-list))
+  class-list)
 
 (defun collect-superclasses (the-class)
-  (return (remove-duplicates
+  (remove-duplicates
 	   (if the-class.direct-superclasses
 	       (the-class.direct-superclasses.concat.apply
-		the-class.direct-superclasses	       
+		the-class.direct-superclasses
 		(the-class.direct-superclasses.map collect-superclasses))
-	       (array)))))
+	       (array))))
 
 (defun compute-precedence-list (the-class)
-  (return ((slot-value (array the-class) 'concat)
+  ((slot-value (array the-class) 'concat)
 	   (sort-class-precedence-list
-		      (collect-superclasses the-class)))))
+		      (collect-superclasses the-class))))
 
 (defun apply-methods (args-arr primaries befores afters)
   (let ((ret-val undefined))
@@ -64,7 +64,7 @@
 	    :call-following-method (lambda ()
 				(if (== 0 this.primary-methods.length)
 				    (return undefined))
-				(return ((slot-value (this.primary-methods.shift) 'apply)
+				(ps:chain this primary-methods (shift) (apply
 					 this
 					 (if (== 0 arguments.length)
 					     args-arr
@@ -73,11 +73,10 @@
       (setf ret-val (this-obj.call-following-method)))
     (dolist2 (ameth afters :backward)
       (ameth.apply nil args-arr))
-    (return ret-val)))
+    ret-val))
 
 (defun generate-effective-method ()
-  (return
-    (lambda ()
+  (lambda ()
       (let ((args-arr (to-array arguments))
 	    (applicable-methods
 	     (compute-applicable-methods arguments.callee
@@ -90,14 +89,14 @@
 	      (log (args-arr.map class-of) :error)))
 ;	    (throw "No applicable method for generic function call"))
 	(let ((primaries (applicable-methods.filter
-			  (lambda (meth) (return (== meth.qualifier "primary")))))
+			  (lambda (meth) (== meth.qualifier "primary"))))
 	      (befores (applicable-methods.filter
-			(lambda (meth) (return (== meth.qualifier "before")))))
+			(lambda (meth) (== meth.qualifier "before"))))
 	      (afters (applicable-methods.filter
-		       (lambda (meth) (return (== meth.qualifier "after"))))))
+		       (lambda (meth) (== meth.qualifier "after")))))
 	  ;(log (+ "Primaries: " primaries ", befores: " befores ", afters" afters))
-	  (return (apply-methods args-arr primaries befores afters)))))))
-	  
+	  (apply-methods args-arr primaries befores afters)))))
+
 
 (defun create-generic ()
   (let ((concrete-function (generate-effective-method)))
@@ -105,7 +104,7 @@
     (setf concrete-function.add-method
 	  (lambda (method)
 	    (concrete-function.method-specializers.push method)))
-    (return concrete-function)))
+    concrete-function))
 
 (defun ensure-generic (existing-version name)
   (defvar rv
@@ -113,7 +112,7 @@
 	existing-version
 	(create-generic)))
   (setf rv.generic-name name)
-  (return rv))
+  rv)
 
 ; a specializer list is a list of classes at the places where normal arguments
 ; are normally passed.  So if a method specializes the second argument with
@@ -123,22 +122,22 @@
   (setf concrete-function.qualifier qualifier)
   (setf concrete-function.specializer-list specializer-list)
   (concrete-generic.add-method concrete-function)
-  (return concrete-function))
+  concrete-function)
 
 (defun is-subclass-of (specializer test-class)
-  (return (if (== specializer test-class)
+  (if (== specializer test-class)
 	      t
 	      (and specializer.direct-subclasses
 		   (specializer.direct-subclasses.some
 		    (lambda (deeper-specializer)
-		      (return (is-subclass-of deeper-specializer test-class))))))))
+		      (is-subclass-of deeper-specializer test-class))))))
 
 (defun specializer-fits-class? (specializer the-class)
   ;(log (+ "Specializer / Class: " specializer " / " the-class))
   (if (== nil specializer)
-      (return t)
-      (return (is-subclass-of 
-	       specializer the-class))))
+      t
+      (is-subclass-of
+	       specializer the-class)))
 
 (defun superclass-more-specific? (on-class super1 super2)
   (if (== nil on-class.precedence-list)
@@ -148,45 +147,44 @@
 	(return t))
     (if (== super2 cur-super)
 	(return nil)))
-  (return nil))
+  nil)
 
 (defun specializer-list-specificity-comparator (class-list speclist1 speclist2)
   (dotimes (index class-list.length)
     (let ((test-class (slot-value class-list index))
 	  (spec1 (slot-value speclist1 index))
 	  (spec2 (slot-value speclist2 index)))
-      (return (if (!= spec1 spec2)
+      (if (!= spec1 spec2)
 		  (if (superclass-more-specific? test-class spec1 spec2)
 		      -1
 		      1)
-		  0)))))
+		  0))))
 
 (defun compute-applicable-methods (concrete-generic args)
-  (let ((classes-of-args (args.map (lambda (arg) (return (class-of arg)))))
+  (let ((classes-of-args (args.map (lambda (arg) (class-of arg))))
 	(applicable-methods
 	 (concrete-generic.method-specializers.filter
-	  (lambda (meth) (return (specializer-list-applicable?
+	  (lambda (meth) (specializer-list-applicable?
 				  meth.specializer-list
-				  args))))))
-    (return (applicable-methods.sort
+				  args)))))
+    (applicable-methods.sort
 	     (lambda (meth1 meth2)
-	       (return (specializer-list-specificity-comparator
+	       (specializer-list-specificity-comparator
 			classes-of-args
-			meth1.specializer-list meth2.specializer-list)))))))
-		
+			meth1.specializer-list meth2.specializer-list)))))
+
 (defun specializer-list-applicable? (specializer-list method-arguments)
   (let ((method-classes (method-arguments.map class-of)))
     (let ((fit-results
 	   (lispy-map specializer-fits-class?
 		      specializer-list
 		      method-classes)))
-      (return
 	(fit-results.every
-	 (lambda (item) (return item)))))))
+	 (lambda (item) item)))))
 
 ; built-in classes/generic functions
 (defmethod init-instance (any-obj)
-  (return (call-next-method)))
+  (call-next-method))
 ;; NOTE: the interface for this function has changed.  it used to take a single argument
 ;; that was the current 'this' object.  however, now it takes the glass to be initialized
 ;; and the working 'this' o
@@ -196,7 +194,6 @@
 ;; in the PSOS system. instantiation by the usre is handled through
 ;; init-instance rather than through the constructor itself
 (defun create-class-constructor ()
-  (return
     (lambda ()
 ;      (log (+ "trying to create new class constructor of class " (class-of this) " / " (class-of (class-of this))))
       ; make the arguments acceptable to init-instance by
@@ -204,7 +201,7 @@
       (let ((args-array (to-array arguments))
 	    (obj-of-correct-type (create-instance (class-of this) args-array this)))
 	(init-instance.apply nil ((slot-value (array obj-of-correct-type) 'concat) args-array))
-	(return obj-of-correct-type)))))
+	obj-of-correct-type)))
 
 ; define the standard-class, whose instances are all user-defined classes
 ; and whose class is itself.  we avoid circularity by setting
@@ -218,12 +215,12 @@
     (setf bc.class-name "standard-class")
     (setf bc.direct-superclasses (array -object))
     (setf bc.precedence-list (array -object))
-    (setf bc.to-string (lambda () (return "<PSOS:Class standard-class>")))
+    (setf bc.to-string (lambda () "<PSOS:Class standard-class>"))
      ; set the class of the standard class to the standard class
     (setf bc.constructor bootstrapped-constructor)
   ;returning a function from a constructor replaces the 'this' object
-  ;as the initialized object. 
-  (return bootstrapped-constructor)))
+  ;as the initialized object.
+  bootstrapped-constructor))
 
 ; bootstrap standard class as described above
 (setf standard-class (new standard-class))
@@ -250,24 +247,24 @@
   (setf asserted-class-obj.constructor our-class)
 ;  (log "ASSERTED CLASS:")
 ;  (log asserted-class-obj)
-  (return asserted-class-obj))
+  asserted-class-obj)
 
 (defmethod create-instance ((our-class standard-class) init-args working-obj)
 ;  (log (+ "creating instance of " our-class.class-name "."))
-  (return (or working-obj (new our-class))))
+  (or working-obj (new our-class)))
 
 (defmethod init-instance ((class-function standard-class) name direct-superclasses slots-ignored options)
   (defvar aso class-function)
   (defvar metaclass (or options.metaclass (class-of class-function)))
   (setf aso.class-name name)
-  (setf aso.to-string (lambda () (return (+ "<Class  " name ">"))))
+  (setf aso.to-string (lambda () (+ "<Class  " name ">")))
 ;  (log (+ "class-of-aso " (class-of aso)))
   (ensure-class-superclasses aso (or direct-superclasses (array)))
 ;  (defaultf metaclass (class-of class-function))
 ;  (log (+ "previous constructor: " aso.constructor) :info 1000)
   (setf aso.constructor metaclass)
 ;  (log (+ "initializing class " name " with metaclass " (class-of aso)) :info 1000)
-  (return aso))
+  aso)
 
 ;(defmethod create-instance :after (our-class standard-object) init-args &optional working-obj)
 
@@ -280,38 +277,38 @@
 ;;; public interface follows ;;;
 ;;; select implementation from AMOP p.50
 (defmethod class-name ((class-obj standard-class))
-  (return class-obj.class-name))
+  class-obj.class-name)
 
 (defmethod class-direct-superclasses ((class-obj standard-class))
-  (return class-obj.direct-superclasses))
+  class-obj.direct-superclasses)
 
 (defmethod class-direct-subclasses ((class-obj standard-class))
-  (return class-obj.direct-subclasses))
+  class-obj.direct-subclasses)
 
 (defmethod class-precedence-list ((class-obj standard-class))
-  (return class-obj.precedence-list))
+  class-obj.precedence-list)
 
 (defmethod class-direct-methods ((class-obj standard-class))
   (log "unsupported method" :error))
 
 (defmethod class-default-direct-superclasses ((class-obj standard-class))
-  (return (array -object)))
+  (array -object))
 
 ;(defmethod make-instance (class-obj standard-class)
 ;  (return 
 
 
 (defun class-of (obj)
-  (return (if obj
+  (if obj
 	      (or obj.psos-metaclass obj.constructor)
-	      nil)))
+	      nil))
 
 ;(defmethod ensure-superclasses ((class-function standard-class) direct-superclasses)
 ;  (ensure-class-superclasses class-function direct-superclasses))
 
 (defun create-class (name direct-superclasses slots-ignored options)
 ;  (log (+ "le metaclass " metaclass))
-  (return (new (standard-class name direct-superclasses slots-ignored options))))
+  (new (standard-class name direct-superclasses slots-ignored options)))
 
 ;(defclass colorful-class (standard-class))
 
@@ -322,4 +319,4 @@
 ;(new (colorful-class "RedColor" (array)))
 
 (defmethod class-default-direct-superclasses ((class-obj standard-class))
-  (return (array -object)))
+  (array -object))

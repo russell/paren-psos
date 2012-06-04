@@ -48,7 +48,7 @@ This doesn't handle multiple readers and writers."
   (declare (ignore options))
   (let ((name-as-string (string-downcase (string formal-name))))
     ;; was defvar but changed to setf so it affects the global situation
-    `(defvar ,formal-name (ensure-generic (or ,formal-name (slot-value js-global:window ',formal-name))
+    `(defvar ,formal-name (ensure-generic (or ,formal-name (getprop js-global:window ',formal-name))
 					  :name ,name-as-string))))
 
 (defun parse-defjsmethod-args (args)
@@ -94,7 +94,7 @@ This doesn't handle multiple readers and writers."
 	   (result
 	    `(progn
 	       ;; was defvar but changed to setf so it affects the global situation
-	       (defvar ,formal-name (ensure-generic (or ,formal-name (slot-value js-global:window ',formal-name))
+	       (defvar ,formal-name (ensure-generic (or ,formal-name (getprop js-global:window ',formal-name))
 						    :name ,name-as-string))
 	       (ensure-method ,formal-name (array ,@specializers)
 			      (lambda ,argument-list
@@ -105,5 +105,5 @@ This doesn't handle multiple readers and writers."
       result)))
 
 (ps:defpsmacro call-next-method (&rest args)
-  `((slot-value this 'call-following-method)
+  `((getprop this 'call-following-method)
     ,@args))

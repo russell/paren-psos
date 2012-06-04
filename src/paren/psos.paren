@@ -9,13 +9,13 @@
 (defun find-class (name)
   "Returns a class object by the name of the class, or undefined if no
 class exists with that name."
-  (return (slot-value *classes* name)))
+  (slot-value *classes* name))
 
 (defun next-class-id ()
   "Each class is given a unique integer identifier.  This function
 returns a unique identifier for a class, though it does not require
 that the identifer is actually used."
-  (return (incf *global-class-counter*)))
+  (incf *global-class-counter*))
 
 (defun link-supers-to-subclass (direct-superclasses subclass)
   "Each class keeps track of its direct subclasses in the javascript
@@ -43,11 +43,10 @@ A note on how javascript constructors work: a constructor can either
 modify the 'this' object or return a new object that is the new
 instance.  The latter is what EVERY psos-class constructor does except
 for raw allocations."
-  (return
     (lambda (init-args)
       (if (not (and init-args
 		    (slot-value init-args :only-allocate)))
-	  (return (make-instance (class-of this) init-args))))))
+	  (make-instance (class-of this) init-args))))
 
 (defun std-class-make-instance (metaclass
 				&key 
@@ -68,7 +67,7 @@ compile-time."
     (setf (slot-value class-obj 'initform-fn) initform-fn)
 
     (setf (slot-value class-obj 'jsns::to-string)
-	  (lambda () (return (+ "<PSOS:Class " name ">"))))
+	  (lambda () (+ "<PSOS:Class " name ">")))
     (setf (slot-value class-obj :constructor)
 	  metaclass)
     (std-finalize-inheritance class-obj)
@@ -77,15 +76,15 @@ compile-time."
     (when merge-prototypes
       (lispy-apply merge-into (slot-value class-obj :prototype)
 		   (methcall :map (slot-value class-obj 'direct-superclasses)
-			  (lambda (cls) (return (slot-value cls :prototype))))))
-    (return class-obj)))
+			  (lambda (cls) (slot-value cls :prototype)))))
+    class-obj))
 
 (defun std-forge-initarg-map (class-obj initarg-map)
   (setf (slot-value class-obj 'initarg-map) (create))
   (dolist (sinitarg-map
 	    (methcall :concat
 		      (methcall :map (slot-value class-obj 'direct-superclasses)
-				(lambda (x) (return (slot-value x 'initarg-map))))
+				(lambda (x) (slot-value x 'initarg-map)))
 		      (array initarg-map)))
 
     (for-in (prop sinitarg-map)
@@ -108,7 +107,7 @@ compile-time."
 
 (defun sort-class-precedence-list (class-list)
   "Sorts the class precedence list with a topological sort. right now, it doesn't do anything."
-  (return class-list))
+  class-list)
 
 (defun collect-superclasses (the-class)
   "Returns a set of all THE-CLASS's superclasses"
@@ -121,25 +120,25 @@ compile-time."
 			  direct-superclasses
 			  (methcall :map direct-superclasses collect-superclasses))
 		(array))))
-      (return (remove-duplicates all-superclasses)))))
+      (remove-duplicates all-superclasses))))
 
 (defun compute-precedence-list (the-class)
   "Computes the class precedence list for THE-CLASS based on a
 topological sort of all the class's superclasses.  Most specific
 superclass is first."
-  (return (methcall :concat 
+  (methcall :concat
 		    (array the-class)
 		    (sort-class-precedence-list
-		     (collect-superclasses the-class)))))
+		     (collect-superclasses the-class))))
 
 (defun ensure-class (class-obj &rest rest &key (metaclass standard-class))
   "Ensures that a class exists that complies with the given options.  If it does not find
 a class it creates one, and if it finds one it attempts to redefine it.  This is sometimes not
 entirely possible (e.g. when a standard-funcallable-class is redefined as a standard class)."
 ;; detect the standard class for boot-strapping purposes
-  (return (if (=== metaclass standard-class)
+  (if (=== metaclass standard-class)
 	      (lispy-apply std-class-make-instance metaclass rest)
-	      (lispy-apply make-instance metaclass rest))))
+	      (lispy-apply make-instance metaclass rest)))
 
 ;; method dispatch functionality
 
@@ -151,7 +150,7 @@ entirely possible (e.g. when a standard-funcallable-class is redefined as a stan
 	     (if (=== standard-generic-function generic-class)
 		 (lispy-apply std-generic-make-instance generic-class rest)
 		 (lispy-apply make-instance generic-class rest)))))
-    (return result)))
+    result))
 
 (defun method-signature (method)
   "Returns a unique string for a given method, taking into account
@@ -166,7 +165,7 @@ or before method."
                    (cond ((not specializer) "NONE")
                          ((slot-value specializer 'psos-id) (slot-value specializer 'psos-id))
                          (t (methcall 'jsns::to-string specializer))))))
-    (return str)))
+    str))
 
 (defun std-generic-add-method (generic method)
   ;; reset method cache hash
@@ -177,7 +176,7 @@ or before method."
   (setf (slot-value generic 'generic-methods)
         (remove (method-signature method)
                 (slot-value generic 'generic-methods)
-                :key (lambda (m) (return (method-signature m)))
+                :key (lambda (m) (method-signature m))
                 :test #'eql))
 
   (methcall :push (slot-value generic 'generic-methods) method))
@@ -191,8 +190,8 @@ or before method."
       (setf generic-name name)
       (setf cached-method-combo (create)))
     (setf (slot-value concrete-function 'jsns::to-string)
-	  (lambda () (return (+ "<PSOS:Generic " (slot-value concrete-function 'generic-name) ">"))))
-    (return concrete-function)))
+	  (lambda () (+ "<PSOS:Generic " (slot-value concrete-function 'generic-name) ">")))
+    concrete-function))
 
 ;;; BEGIN LOSS
 
@@ -209,13 +208,13 @@ primary, before, and after methods are passed in most-specific-first."
 		       (let* ((c (and arg  (class-of arg)))
 			      (cn (and c (or (slot-value c 'class-name)
 					     (slot-value c 'js-global::name)))))
-			 (return (or cn c))))))
+			 (or cn c)))))
     (when (slot-value jsns::window 'jsns::console)
       (methcall "trace" js-global::console))
 
     (throw (create "message" (+ "No applicable methods for generic function call "
                                 (slot-value method-combo 'generic 'generic-name))
-                   "toString" (lambda () (return (slot-value this "message")))))
+                   "toString" (lambda () (slot-value this "message"))))
 
 
     (return nil))
@@ -233,8 +232,8 @@ primary, before, and after methods are passed in most-specific-first."
 	    'call-following-method
 	    (lambda ()
 	      (if (== 0 (slot-value this 'primary-methods :length))
-		  (return undefined))
-	      (let* ((next-method (methcall :shift (slot-value this 'primary-methods)))
+		  undefined)
+	      (let* ((next-method (methcall :pop (slot-value this 'primary-methods)))
 		     (args (if (== 0 (slot-value jsns::arguments :length))
 			       args-arr
 			       jsns::arguments))
@@ -246,12 +245,12 @@ primary, before, and after methods are passed in most-specific-first."
 
     ;; apply all the after methods from top to bottom
     (dolist2 (ameth afters :backward) (methcall :apply ameth nil args-arr))
-    (return ret-val)))
+    ret-val))
 
 (defun compute-effective-method-combination (generic args-arr)
   (labels ((qualifer-matcher (str)
-             (return (lambda (meth) 
-                       (return (== str (slot-value meth 'qualifier)))))))
+             (lambda (meth)
+                       (== str (slot-value meth 'qualifier)))))
 
     (let* ((applicable-methods
             (compute-applicable-methods generic args-arr))
@@ -266,7 +265,7 @@ primary, before, and after methods are passed in most-specific-first."
                                        (methcall :filter applicable-methods
                                                  (qualifer-matcher "before")))
                     'afters (methcall :filter applicable-methods (qualifer-matcher "after")))))
-      (return effective-method-combo))))
+      effective-method-combo)))
 
 
 
@@ -275,7 +274,6 @@ primary, before, and after methods are passed in most-specific-first."
   "Returns a new function that serves as the executable function for a generic function.
 Compute-applicable-methods and subsequent steps like the primaries, befores, afters
 filtering could all be cached."
-  (return
     (lambda (&rest args)
       (let* ((generic (slot-value js-global::arguments :callee))
 	     (call-signature
@@ -285,14 +283,14 @@ filtering could all be cached."
 			 args
 			 (lambda (arg)
 			   (let ((the-class (class-of arg)))
-			     (return (or (and the-class (slot-value the-class 'psos-id))
-					 (typeof arg))))))))
+			     (or (and the-class (slot-value the-class 'psos-id))
+					 (typeof arg)))))))
 	     (effective-method-combo
 	      (or (slot-value generic 'cached-method-combo call-signature)
 		  (compute-effective-method-combination generic args))))
 	(setf (slot-value generic 'cached-method-combo call-signature)
 	      effective-method-combo)
-	(return (apply-std-method-combination effective-method-combo args))))))
+	(apply-std-method-combination effective-method-combo args))))
 
 (defun ensure-method (concrete-generic specializer-list concrete-function &optional (qualifier "primary"))
   "A specializer list is a list of classes at the places where normal arguments
@@ -304,23 +302,22 @@ the second argument is the function to be called when this method is called"
   (std-generic-add-method concrete-generic concrete-function)
   ;(setf (slot-value concrete-function 'js-global::fn)
   ;(slot-value concrete-generic 'generic-name))
-  (return concrete-function))
+  concrete-function)
 
 (defun is-subclass-of (specializer test-class)
   "Returns T if TEST-CLASS is a subclass of SPECIALIZER."
-  (return
     (if (=== specializer test-class)
 	t
 	(and (slot-value specializer 'direct-subclasses)
 	     (methcall :some (slot-value specializer 'direct-subclasses)
 		     (lambda (deeper-specializer)
-		       (return (is-subclass-of deeper-specializer test-class))))))))
+		       (is-subclass-of deeper-specializer test-class))))))
 
 (defun specializer-fits-class? (specializer the-class)
   (if (== nil specializer)
-      (return t)
-      (return (is-subclass-of 
-	       specializer the-class))))
+      t
+      (is-subclass-of
+	       specializer the-class)))
 
 (defun superclass-more-specific? (on-class super1 super2)
   (if (== nil (slot-value on-class 'precedence-list))
@@ -330,7 +327,7 @@ the second argument is the function to be called when this method is called"
 	(return t))
     (if (=== super2 cur-super)
 	(return nil)))
-  (return nil))
+  nil)
 
 (defun specializer-list-specificity-comparator (class-list speclist1 speclist2)
   (dotimes (index (slot-value class-list :length))
@@ -344,35 +341,34 @@ the second argument is the function to be called when this method is called"
 					   0)))
       (when (!== 0 indexth-specializer-result)
 	  (return indexth-specializer-result))))
-  (return 0))
+  0)
 
 (defun compute-applicable-methods (concrete-generic args)
   "Computers the methods that are applicable to the given generic function when passed
 args.  Right now it looks through all the method specializers."
-  (let* ((classes-of-args (methcall :map args (lambda (arg) (return (class-of arg)))))
+  (let* ((classes-of-args (methcall :map args (lambda (arg) (class-of arg))))
 	 (applicable-methods
 	  (methcall :filter (slot-value concrete-generic 'generic-methods)
-		    (lambda (meth) (return (specializer-list-applicable?
+		    (lambda (meth) (specializer-list-applicable?
 					    (slot-value meth 'specializer-list)
-					    args)))))
+					    args))))
 	 (final-method-list
 	  (methcall :sort applicable-methods
 		    (lambda (meth1 meth2)
-		      (return (specializer-list-specificity-comparator
+		      (specializer-list-specificity-comparator
 			       classes-of-args
 			       (slot-value meth1 'specializer-list)
-			       (slot-value meth2 'specializer-list)))))))
-    (return final-method-list)))
-		
+			       (slot-value meth2 'specializer-list))))))
+    final-method-list))
+
 (defun specializer-list-applicable? (specializer-list method-arguments)
   (let ((method-classes (methcall :map method-arguments class-of)))
     (let ((fit-results
 	   (lispy-map specializer-fits-class?
 		      specializer-list
 		      method-classes)))
-      (return
 	(methcall :every fit-results
-	 (lambda (item) (return item)))))))
+	 (lambda (item) item)))))
 
 ;;; Bootstrapping
 ;; 1. Create the standard class.
@@ -414,17 +410,17 @@ is to merge the initargs into the instance for slot instantiation."))
 (defvar init-instance initialize-instance)
 
 (defmethod allocate-instance ((of-class standard-class) &rest rest)
-  (return (new (of-class (create :only-allocate t)))))
+  (new (of-class (create :only-allocate t))))
 
 (defmethod make-instance ((of-class standard-class) &rest rest)
   (let ((instance (methcall :apply allocate-instance this jsns::arguments)))
-    (return (or (lispy-apply initialize-instance instance rest)
-		instance))))
+    (or (lispy-apply initialize-instance instance rest)
+		instance)))
 
 (defmethod make-instance ((class-name js-global::-string) &rest rest)
   (let ((clz (slot-value *classes* class-name)))
     (if clz
-	(return (lispy-apply make-instance clz rest))
+	(lispy-apply make-instance clz rest)
 	(throw (+ "ERROR  Class of name " class-name " not found!")))))
 
 (defmethod initialize-instance ((instance standard-object) &rest rest)
@@ -447,50 +443,50 @@ is to merge the initargs into the instance for slot instantiation."))
                      (methcall 'initform-fn supercl instance)))
                  (class-precedence-list (class-of instance))))
     (setf initializedp t))
-  (return instance))
+  instance)
 
 
 ;;; public interface follows ;;;
 ;;; select implementation from AMOP p.50
 (defmethod class-name ((class-obj standard-class))
-  (return (slot-value class-obj 'class-name)))
+  (slot-value class-obj 'class-name))
 
 (defmethod class-direct-superclasses ((class-obj standard-class))
-  (return (slot-value class-obj 'direct-superclasses)))
+  (slot-value class-obj 'direct-superclasses))
 
 (defmethod class-direct-subclasses ((class-obj standard-class))
-  (return (slot-value class-obj 'direct-subclasses)))
+  (slot-value class-obj 'direct-subclasses))
 
 (defmethod class-precedence-list ((class-obj standard-class))
-  (return (slot-value class-obj 'precedence-list)))
+  (slot-value class-obj 'precedence-list))
 
 (defmethod class-direct-methods ((class-obj standard-class))
   (throw "Unsupported method: class-direct-method"))
 
 (defmethod class-default-direct-superclasses ((class-obj standard-class))
-  (return (array -object)))
+  (array -object))
 
 (defmethod generic-name ((generic standard-generic-function))
-  (return (slot-value generic 'generic-name)))
+  (slot-value generic 'generic-name))
 
 (defmethod class-initarg-map ((class-obj standard-class))
-  (return (slot-value class-obj 'initarg-map)))
+  (slot-value class-obj 'initarg-map))
 
 (defun class-of (obj)
-  (return (if obj
+  (if obj
 	      (or (slot-value obj 'psos-metaclass)
 		  (slot-value obj :constructor))
-	      nil)))
+	      nil))
 
 (defmethod class-default-direct-superclasses ((class-obj standard-class))
-  (return (array standard-object)))
+  (array standard-object))
 
 (defun rjson-alloc-fn (for-class)
-  (return (lambda () (return (allocate-instance for-class)))))
+  (lambda () (allocate-instance for-class)))
 
 (defun rjson-init-fn (for-class)
-  (return (lambda (existing-obj arg-obj)
+  (lambda (existing-obj arg-obj)
 	    (let ((result (lispy-apply initialize-instance
 				       existing-obj
 				       (object-to-keyargs arg-obj))))
-	      (return result)))))
+	      result)))

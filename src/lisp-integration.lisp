@@ -142,7 +142,7 @@
 	   `(progn
 	     ,@(mapcar #'(lambda (reader)
 			   `(defmethod ,reader ((obj ,class-name))
-			     (return (slot-value obj ',slot-name))))
+                    (slot-value obj ',slot-name)))
 		       readers)
 	     ,@(mapcar #'(lambda (writer)
 			 `(defsetf ,writer (object) (new-value)
