@@ -318,13 +318,12 @@ the second argument is the function to be called when this method is called"
 
 (defun superclass-more-specific? (on-class super1 super2)
   (if (== nil (slot-value on-class 'precedence-list))
-      (return nil))
+      (return-from superclass-more-specific? nil))
   (dolist (cur-super (slot-value on-class 'precedence-list))
     (if (=== super1 cur-super)
-	(return t))
+	(return-from superclass-more-specific? t))
     (if (=== super2 cur-super)
-	(return nil)))
-  nil)
+	(return-from superclass-more-specific? nil))))
 
 (defun specializer-list-specificity-comparator (class-list speclist1 speclist2)
   (dotimes (index (slot-value class-list :length))
