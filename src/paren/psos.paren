@@ -255,9 +255,9 @@ primary, before, and after methods are passed in most-specific-first."
             (create 'generic generic
                     ;;		:arounds (applicable-methods.filter
                     ;;			    (lambda (meth) (return (== meth.qualifier "around"))))
-                    'primaries          ;(methcall :reverse
+                    'primaries (methcall :reverse
                     (methcall :filter applicable-methods
-                              (qualifer-matcher "primary"))
+                              (qualifer-matcher "primary")))
                     'befores (methcall :reverse
                                        (methcall :filter applicable-methods
                                                  (qualifer-matcher "before")))
@@ -318,12 +318,12 @@ the second argument is the function to be called when this method is called"
 
 (defun superclass-more-specific? (on-class super1 super2)
   (if (== nil (slot-value on-class 'precedence-list))
-      (return-from superclass-more-specific? nil))
+      (return-from superclass-more-specific? false))
   (dolist (cur-super (slot-value on-class 'precedence-list))
     (if (=== super1 cur-super)
 	(return-from superclass-more-specific? t))
     (if (=== super2 cur-super)
-	(return-from superclass-more-specific? nil))))
+	(return-from superclass-more-specific? false))))
 
 (defun specializer-list-specificity-comparator (class-list speclist1 speclist2)
   (dotimes (index (slot-value class-list :length))
@@ -336,7 +336,8 @@ the second argument is the function to be called when this method is called"
 					       1)
 					   0)))
       (when (!== 0 indexth-specializer-result)
-	  (return indexth-specializer-result))))
+	  (return-from specializer-list-specificity-comparator
+        indexth-specializer-result))))
   0)
 
 (defun compute-applicable-methods (concrete-generic args)
