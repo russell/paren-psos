@@ -214,10 +214,7 @@ primary, before, and after methods are passed in most-specific-first."
 
     (throw (create "message" (+ "No applicable methods for generic function call "
                                 (slot-value method-combo 'generic 'generic-name))
-                   "toString" (lambda () (slot-value this "message"))))
-
-
-    (return nil))
+                   "toString" (lambda () (slot-value this "message")))))
   (let* ((ret-val undefined)
 	 (befores (slot-value method-combo 'befores))
 	 (afters (slot-value method-combo 'afters))
@@ -232,14 +229,14 @@ primary, before, and after methods are passed in most-specific-first."
 	    'call-following-method
 	    (lambda ()
 	      (if (== 0 (slot-value this 'primary-methods :length))
-		  undefined)
+              (return undefined))
 	      (let* ((next-method (methcall :pop (slot-value this 'primary-methods)))
 		     (args (if (== 0 (slot-value jsns::arguments :length))
 			       args-arr
 			       jsns::arguments))
 		     (result 
 		      (methcall :apply next-method this args)))
-		(return result))))))
+		result)))))
 
       (setf ret-val (methcall 'call-following-method this-obj)))
 
